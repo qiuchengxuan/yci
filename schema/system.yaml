@@ -1,0 +1,42 @@
+openapi: 3.0.3
+info:
+  title: Describe system schema
+  version: 0.1.0
+components:
+  schemas:
+    System:
+      type: object
+      properties:
+        hostname:
+          type: string
+        timezone:
+          type: string
+      required:
+        - hostname
+        - timezone
+paths:
+  /system:
+    get:
+      tags:
+        - config
+      summary: Get system config
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/System'
+    put:
+      summary: Replace system config
+      tags:
+        - config
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/System'
+      responses:
+        '200':
+          description: Success

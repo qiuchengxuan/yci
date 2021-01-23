@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: Describe service schema
+  version: 0.1.0
+components:
+  schemas:
+    Service:
+      type: object
+      properties:
+        enable:
+          type: boolean
+      required:
+        - enable
+    Services:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Service'
+paths:
+  /service:
+    get:
+      tags:
+        - config
+      summary: Get services config
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Services'
+  /service/{name}:
+    get:
+      summary: Get service config
+      tags:
+        - config
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+    put:
+      summary: Replace system config
+      tags:
+        - config
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Service'
+      responses:
+        '200':
+          description: Success

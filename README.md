@@ -1,59 +1,54 @@
 YAML-based Configuration Interface
 ==================================
 
-This project aims at describe any configuration as OpenAPI compactible YAML,
+This project aims at describe any configuration as OpenAPI specs.
 therefore we can easily convert between text-based configuration and RESTFUL API call.
 
-e.g. we have an openvpn schema like this:
+e.g. we have an schema like this:
 
 ```yaml
 openapi: '3.0.3'
 info:
-  title: Describe OpenVPN tunnel schema
+  title: Describe system schema
   version: 0.1.0
 components:
   schemas:
-    OpenVPN:
+    System:
       type: object
       properties:
-        source:
+        hostname:
           type: string
-          format: ipv4
-        destination:
+        timezone:
           type: string
-          format: ipv4
-        address:
-          type: string
-          format: ipv4
-        remote:
-          type: string
-          format: ipv4
-        mode:
-          type: string
-          enum: [site-to-site, client, server]
       required:
-        - souce
-        - destination
-        - address
-        - remote
-        - mode
+        - hostname
+        - timezone
 paths:
-  /interface/openvpn/{name}:
+  /system:
+    get:
+      tags:
+        - config
+      summary: Get system config
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/System'
+  /system:
     put:
-      summary: Create openvpn instance
-      parameters:
-        - in: path
-          name: name
-          schema:
-            type: string
-          required: true
-          description: OpenVPN instance name
+      summary: Replace system config
+      tags:
+        - config
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OpenVPN'
+              $ref: '#/components/schemas/System'
       responses:
         '200':
           description: Success
@@ -62,12 +57,9 @@ paths:
 Then we got a YAML config like this:
 
 ```yaml
-interface tun0:
-  type: openvpn
-  destination: 8.8.8.8
-  local: 10.0.0.1
-  remote: 10.0.0.7
-  mode: site-to-site
+system:
+  hostname: localhost
+  timezone: Asia/Shanghai
 ```
 
 The rule applied to it as following:
@@ -78,15 +70,18 @@ The rule applied to it as following:
 So we got a RESTFUL API call like this:
 
 * method: PUT
-* url: /interface/tun0
+* url: /system
 * body:
 
   ```json
   {
-    "type": "openvpn",
-    "destination": "8.8.8.8",
-    "local": "10.0.0.1",
-    "remote": "10.0.0.7",
-    "mode": "site-to-site"
+    "hostname": "localhost",
+    "timezone": "Asia/Shanghai"
   }
   ```
+
+Objective
+---------
+
+* YAML-based configuration schema validation
+* Convert between YAML config and REST data
