@@ -32,7 +32,7 @@ pub enum Error {
 }
 
 fn transform_mapping(path: &str, mapping: Mapping) -> Mapping {
-    let prefix = path.trim_matches('/').replace('/', " ");
+    let prefix = path.trim_matches('/').trim_end_matches('s').replace('/', " ");
     let mut new_mapping = Mapping::new();
     for (key, value) in mapping.into_iter() {
         let new_key = match key {
@@ -110,9 +110,13 @@ impl<'a> RunningConfig<'a> {
                     validator.validate(&json).map_err(|e| Error::Validation(e))?;
                 }
                 let mut yaml = serde_json::from_str::<Value>(&body).map_err(|e| Error::JSON(e))?;
-                if schema.additional_properties.is_some() {
-                    if let Value::Mapping(mapping) = yaml {
-                        yaml = Value::Mapping(transform_mapping(path, mapping));
+                let plural = schema.additional_properties.is_some() || schema.items.is_some();
+                if plural {
+                    match yaml {
+                        Value::Mapping(mapping) => {
+                            yaml = Value::Mapping(transform_mapping(path, mapping))
+                        }
+                        _ => (),
                     }
                 } else {
                     let mut new_mapping = Mapping::new();
@@ -128,56 +132,4 @@ impl<'a> RunningConfig<'a> {
 }
 
 #[cfg(test)]
-mod test {
-    fn yaml(expected: &str) -> String {
-        let first_line = expected.trim_start_matches('\n').lines().next().unwrap();
-        let spaces = first_line.split(|c| c != ' ').next().unwrap();
-        expected.replace(spaces, "").trim().to_owned()
-    }
-
-    #[test]
-    fn test_running_config() {
-        use std::convert::TryFrom;
-
-        use mockito::mock;
-        use serde_json::json;
-
-        use super::{RunningConfig, ValidatedSpec, JSON};
-
-        let system = oas3::from_path("schema/system.yaml").unwrap();
-        let service = oas3::from_path("schema/service.yaml").unwrap();
-        let validated_specs =
-            [ValidatedSpec::try_from(system).unwrap(), ValidatedSpec::try_from(service).unwrap()];
-        let server = mockito::server_url();
-        let running_config = RunningConfig::new(&server, &validated_specs[..]);
-        let body = json!({"hostname": "UT", "timezone": "Asia/Shanghai"});
-        let _m = mock("GET", "/system")
-            .with_status(200)
-            .with_header("content-type", JSON)
-            .with_body(body.to_string())
-            .create();
-        let body = json!({
-            "networking": {"enable": true},
-            "rsyslog": {"enable": false}
-        });
-        let _n = mock("GET", "/service")
-            .with_status(200)
-            .with_header("content-type", JSON)
-            .with_body(body.to_string())
-            .create();
-        let actual = tokio_test::block_on(running_config.get()).unwrap();
-        let expected = yaml(
-            r#"
-        ---
-        system:
-          hostname: UT
-          timezone: Asia/Shanghai
-        ---
-        service networking:
-          enable: true
-        service rsyslog:
-          enable: false"#,
-        );
-        assert_eq!(actual, expected.trim())
-    }
-}
+mod test;

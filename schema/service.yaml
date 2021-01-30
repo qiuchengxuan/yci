@@ -16,7 +16,7 @@ components:
       additionalProperties:
         $ref: '#/components/schemas/Service'
 paths:
-  /service:
+  /services:
     get:
       tags:
         - config
@@ -28,7 +28,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Services'
-  /service/{name}:
+  /services/{name}:
     get:
       summary: Get service config
       tags:
