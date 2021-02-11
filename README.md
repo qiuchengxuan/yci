@@ -4,6 +4,9 @@ YAML-based Configuration Interface
 This project aims at describe any configuration as OpenAPI specs.
 therefore we can easily convert between text-based configuration and RESTFUL API call.
 
+Introduction
+------------
+
 e.g. we have an schema like this:
 
 ```yaml
@@ -57,6 +60,10 @@ paths:
 Then we got a YAML config like this:
 
 ```yaml
+version: 0.1
+format: standard
+date: 2021-02-11
+---
 system:
   hostname: localhost
   timezone: Asia/Shanghai
@@ -79,7 +86,46 @@ So we got a RESTFUL API call like this:
     "timezone": "Asia/Shanghai"
   }
   ```
+  
+Standard and compact format
+---------------------------
 
+e.g. we have a configuration like this:
+
+```yaml
+version: 0.1
+format: standard
+date: 2021-02-11
+---
+interfaces eth1:
+  address: 192.168.1.2/24
+# a lot of configuration ...
+interfaces eth1 ip ospf:
+  cost: 100
+```
+
+It's not that convenient to lookup ospf configuration
+with a lot configuration between then, and `interfaces eth1` looks weired, 
+so a compact format would be more friendly to read like this:
+
+```yaml
+version: 0.1
+format: compact
+date: 2021-02-11
+---
+interface eth1:
+  address: 192.168.1.2/24
+  ip ospf:
+    cost: 100
+# ...
+```
+
+But we no longer able to treat a whole top level entry as a valid
+put method, and we have no idea whether it's attribute is part of 
+it's schema, so a compact configuration must be restored to standard 
+configuration with schemas involved, or call put methods with aid of 
+schemas.
+  
 Objective
 ---------
 
